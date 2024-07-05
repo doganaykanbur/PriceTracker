@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DBFacadeListMeal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PriceTracker-app</a> &gt; <a href="index.source.html" class="el_package">com.kanbur.Price</a> &gt; <span class="el_source">DBFacadeListMeal.java</span></div><h1>DBFacadeListMeal.java</h1><pre class="source lang-java linenums">/**
+ * The package com.kanbur.Price contains classes related to the calculator application.
+ */
+package com.kanbur.Price;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.swing.table.DefaultTableModel;
+
+/**
+ * @brief Provides methods to fetch data for listing meals.
+ */
+public class DBFacadeListMeal {
+
+	/**
+	 * The singleton instance of DatabaseConnectionMenu.
+	 */
+	private DBConnection databaseConnection;
+	
+	/**
+	 * Instance of the ListMealMenu class.
+	 */
+	ListMealMenu listMealMenu;
+
+	/**
+	 * @brief Constructs a DatabaseFacadeForListMealMenu object.
+	 * @param menu The ListMealMenu object associated with this facade.
+	 */
+<span class="fc" id="L31">	public DBFacadeListMeal(ListMealMenu menu) {</span>
+<span class="fc" id="L32">		databaseConnection = DBConnection.getInstance();</span>
+<span class="fc" id="L33">		this.listMealMenu = menu;</span>
+<span class="fc" id="L34">	}</span>
+
+	/**
+	 * @brief Fetches data from the database and populates the JTable in the
+	 *        associated menu.
+	 */
+	public void FetchData() {
+<span class="fc" id="L41">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L42">		String query = &quot;SELECT Meals.meal_id, Meals.meal_name, Meals.meal_cost, GROUP_CONCAT(MealRecipes.recipe_name, ', ') AS recipe_name &quot;</span>
+				+ &quot;FROM Meals INNER JOIN MealRecipes &quot; + &quot;ON Meals.meal_id = MealRecipes.meal_id &quot;
+				+ &quot;GROUP BY Meals.meal_id&quot;;
+<span class="fc" id="L45">		DefaultTableModel model = (DefaultTableModel) listMealMenu.jTable1.getModel();</span>
+<span class="fc" id="L46">		model.setRowCount(0); // Clear the table</span>
+
+<span class="fc" id="L48">		try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {</span>
+
+			// Add results to the table
+<span class="fc bfc" id="L51" title="All 2 branches covered.">			while (rs.next()) {</span>
+<span class="fc" id="L52">				int meal_id = rs.getInt(&quot;meal_id&quot;);</span>
+<span class="fc" id="L53">				String meal_name = rs.getString(&quot;meal_name&quot;);</span>
+<span class="fc" id="L54">				String meal_cost = rs.getString(&quot;meal_cost&quot;);</span>
+<span class="fc" id="L55">				String recipe_name = rs.getString(&quot;recipe_name&quot;);</span>
+
+<span class="fc" id="L57">				model.addRow(new Object[] { meal_id, meal_name, recipe_name, meal_cost });</span>
+<span class="fc" id="L58">			}</span>
+<span class="nc" id="L59">		} catch (SQLException ex) {</span>
+<span class="nc" id="L60">			ex.printStackTrace();</span>
+<span class="fc" id="L61">		}</span>
+<span class="fc" id="L62">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

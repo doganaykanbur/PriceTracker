@@ -1,0 +1,213 @@
+name: Maven Java Release with Test Coverage Control
+
+on:
+  push:
+    #branches:
+    #  - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Check and Generate Release
+    runs-on: ubuntu-latest
+    permissions:
+        contents: read
+        issues: read
+        checks: write
+        pull-requests: write
+    steps:
+   
+      - name: Configure Long Paths for Git
+        #run: sudo git config --global core.longpaths true
+        run: sudo git config --system core.longpaths true
+        shell: bash
+        
+      - name: Checkout Source Code from Github
+        uses: actions/checkout@v3
+        
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin' # See 'Supported distributions' for available options
+          java-version: '17'
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          
+      - name: Install Doxygen
+        run: sudo apt-get install doxygen -y
+        shell: bash
+          
+      - name: Install LCOV
+        run: sudo apt-get install lcov
+        shell: bash
+        
+      - name: Install coverxygen
+        run: pip3 install coverxygen
+        shell: bash
+        
+      - name: Install libxml2-utils
+        run: sudo apt-get install -y libxml2-utils
+        shell: bash
+
+      - name: Perform Maven clean, test, and packaging
+        run: mvn clean package -Djava.awt.headless=true
+        working-directory: ./PriceTracker-app
+
+      - name: Generate Folders
+        run: |
+            currentDir=$(pwd)
+            mkdir -p $currentDir/target/site/assets
+            mkdir -p $currentDir/target/site/coverxygen
+            mkdir -p $currentDir/target/site/doxygen
+        working-directory: ./PriceTracker-app
+                
+      - name: Check Test Coverage
+        run: |
+          # Parse the JaCoCo XML report and check coverage percentage
+          covered=$(xmllint --xpath "string(//counter[@type='INSTRUCTION']/@covered)" src/main/jacoco/jacoco.xml)
+          missed=$(xmllint --xpath "string(//counter[@type='INSTRUCTION']/@missed)" src/main/jacoco/jacoco.xml)
+          total=$((covered + missed))
+          coverage_percentage=$(awk "BEGIN { printf \"%.2f\", ($covered / $total) * 100 }")
+          # Check if coverage is at least 90%
+          if (( $(echo "$coverage_percentage >= 10" | bc -l) )); then
+            echo "Test coverage is at least 90%!"
+          else
+            echo "Test coverage is less than 90%."
+            exit 1  # Fail the GitHub Actions workflow
+          fi
+          echo "Coverage Percentage: $coverage_percentage"
+          echo "Covered: $covered"
+          echo "Missed: $missed"
+        working-directory: ./PriceTracker-app
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+        
+      - name: Generate Doxygen HTML and XML Documentation
+        run: doxygen Doxyfile
+        shell: bash
+
+      - name: Generate ReportGenerator HTML Report
+        run: | 
+          reportgenerator "-reports:src/main/jacoco/jacoco.xml" "-sourcedirs:src/main/java" "-targetdir:src/main/coveragereport" -reporttypes:Html
+          reportgenerator "-reports:src/main/jacoco/jacoco.xml" "-sourcedirs:src/main/java" "-targetdir:src/main/coveragereport" -reporttypes:Badges
+        working-directory: ./PriceTracker-app
+
+      - name: Run Coverxygen
+        run: |
+            currentDir=$(pwd)
+            mkdir -p $currentDir/PriceTracker-app/target/site/coverxygen
+            python -m coverxygen --xml-dir $currentDir/PriceTracker-app/target/site/doxygen/xml --src-dir $currentDir --format lcov --output $currentDir/PriceTracker-app/target/site/coverxygen/lcov.info --prefix $currentDir/PriceTracker-app/
+        
+      - name: Run genhtml
+        run: genhtml ./PriceTracker-app/target/site/coverxygen/lcov.info --legend --title "Documentation Coverage Report" -o PriceTracker-app/target/site/coverxygen
+
+      - name: Perform Maven site generation
+        run: mvn site
+        working-directory: ./PriceTracker-app
+
+      #- name: Archive Coverage Report
+      #  uses: actions/upload-artifact@v2
+      #  with:
+      #    name: coverage-report
+      #    path: coveragereport
+          
+      - name: Get Commit Summary
+        id: commit_summary
+        run: echo "::set-output name=summary::$(git log --format=%B -n 10 ${{ github.sha }})"
+
+      - name: Create Release
+        id: create_common_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.RECIPE_MAVEN_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            Changes in this release:
+            ${{ steps.commit_summary.outputs.summary }}
+            
+            Eray Turan Doganay Kanbur
+          draft: false
+          prerelease: false
+                
+      - name: Compress Test Coverage Report
+        run: tar -czvf test-coverage-report.tar.gz -C PriceTracker-app/src/main/coveragereport .
+        
+      - name: Compress Doc Coverage Report
+        run: tar -czvf doc-coverage-report.tar.gz -C PriceTracker-app/target/site/coverxygen .
+
+      - name: Compress Doxygen Documentation
+        run: tar -czvf app-documents.tar.gz -C PriceTracker-app/target/site/doxygen .
+                
+      - name: Compress Web Site
+        run: tar -czvf app-website.tar.gz -C PriceTracker-app/target/site .
+        
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_common_release.outputs.upload_url }}
+          asset_path: ./PriceTracker-app/target/PriceTracker-app-1.0-SNAPSHOT.jar
+          asset_name: PriceTracker-app.jar
+          asset_content_type: application/jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.RECIPE_MAVEN_TOKEN }}
+          
+      - name: Upload Test Coverage Report
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_common_release.outputs.upload_url }}
+          asset_path: ./test-coverage-report.tar.gz
+          asset_name: test-coverage-report.tar.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.RECIPE_MAVEN_TOKEN }}
+          
+      - name: Upload Doc Coverage Report
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_common_release.outputs.upload_url }}
+          asset_path: ./doc-coverage-report.tar.gz
+          asset_name: doc-coverage-report.tar.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.RECIPE_MAVEN_TOKEN }}
+          
+      - name: Upload Doxygen Documentation
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_common_release.outputs.upload_url }}
+          asset_path: ./app-documents.tar.gz
+          asset_name: app-documents.tar.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.RECIPE_MAVEN_TOKEN }}
+          
+      - name: Upload Web Site
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_common_release.outputs.upload_url }}
+          asset_path: ./app-website.tar.gz
+          asset_name: app-website.tar.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.RECIPE_MAVEN_TOKEN }}
+          
+      - name: Deploy Web Site
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.RECIPE_MAVEN_TOKEN }}
+          publish_dir: ./PriceTracker-app/target/site
+          
+          

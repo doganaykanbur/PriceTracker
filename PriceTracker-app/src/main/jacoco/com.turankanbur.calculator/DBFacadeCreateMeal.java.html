@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DBFacadeCreateMeal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PriceTracker-app</a> &gt; <a href="index.source.html" class="el_package">com.kanbur.Price</a> &gt; <span class="el_source">DBFacadeCreateMeal.java</span></div><h1>DBFacadeCreateMeal.java</h1><pre class="source lang-java linenums">/**
+ * The package com.kanbur.Price contains classes related to the calculator application.
+ */
+package com.kanbur.Price;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
+/**
+ * @brief Facade class for managing meal-related operations in the database.
+ *        This class provides methods to create meal tables, add meals, fetch
+ *        recipes, and calculate meal costs.
+ */
+public class DBFacadeCreateMeal {
+
+	/**
+	 * The singleton instance of DatabaseConnectionMenu.
+	 */
+	private DBConnection databaseConnection;
+	
+	/**
+	 * Instance of the CreateMealMenu class.
+	 */
+	CreateMealMenu createMealMenu;
+
+	/**
+	 * @brief Constructor that initializes the database connection and the menu.
+	 * @param menu The CreateMealMenu instance to associate with this facade.
+	 */
+<span class="fc" id="L35">	public DBFacadeCreateMeal(CreateMealMenu menu) {</span>
+<span class="fc" id="L36">		databaseConnection = DBConnection.getInstance();</span>
+<span class="fc" id="L37">		this.createMealMenu = menu;</span>
+<span class="fc" id="L38">	}</span>
+
+	/**
+	 * @brief Creates the Meals table if it does not already exist. The table
+	 *        includes columns for meal ID, name, cost, and recipe name.
+	 */
+	public void createMealTable() {
+<span class="fc" id="L45">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L46">		String enableForeignKeysQuery = &quot;PRAGMA foreign_keys = ON&quot;;</span>
+<span class="fc" id="L47">		String createTableQuery = &quot;CREATE TABLE IF NOT EXISTS Meals (&quot; + &quot;meal_id INTEGER PRIMARY KEY AUTOINCREMENT,&quot;</span>
+				+ &quot;meal_name TEXT UNIQUE,&quot; + &quot;meal_cost TEXT,&quot; + &quot;recipe_name TEXT&quot; + &quot;)&quot;;
+<span class="fc" id="L49">		try (Statement statement = connection.createStatement()) {</span>
+<span class="fc" id="L50">			statement.executeUpdate(enableForeignKeysQuery);</span>
+<span class="fc" id="L51">			statement.executeUpdate(createTableQuery);</span>
+<span class="fc" id="L52">			System.out.println(&quot;Meal table created successfully.&quot;);</span>
+<span class="nc" id="L53">		} catch (SQLException e) {</span>
+<span class="nc" id="L54">			System.err.println(&quot;Error creating Meal table: &quot; + e.getMessage());</span>
+<span class="fc" id="L55">		}</span>
+<span class="fc" id="L56">	}</span>
+
+	/**
+	 * @brief Creates the MealRecipes table if it does not already exist. The table
+	 *        includes columns for meal ID and recipe name, with a foreign key
+	 *        constraint on the meal ID.
+	 */
+	public void createMealRecipesTable() {
+<span class="fc" id="L64">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L65">		String createTableQuery = &quot;CREATE TABLE IF NOT EXISTS MealRecipes (&quot; + &quot;meal_id INTEGER,&quot; + &quot;recipe_name TEXT,&quot;</span>
+				+ &quot;FOREIGN KEY (meal_id) REFERENCES Meals(meal_id)&quot; + &quot;)&quot;;
+<span class="fc" id="L67">		try (Statement statement = connection.createStatement()) {</span>
+<span class="fc" id="L68">			statement.executeUpdate(createTableQuery);</span>
+<span class="fc" id="L69">			System.out.println(&quot;MealRecipes table created successfully.&quot;);</span>
+<span class="nc" id="L70">		} catch (SQLException e) {</span>
+<span class="nc" id="L71">			System.err.println(&quot;Error creating MealRecipes table: &quot; + e.getMessage());</span>
+<span class="fc" id="L72">		}</span>
+<span class="fc" id="L73">	}</span>
+
+	/**
+	 * @brief Adds a new meal to the database. The meal includes an ID, name, cost,
+	 *        and associated recipes.
+	 */
+	public void addMealToDatabase() {
+<span class="fc" id="L80">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L81">		String recipeName = createMealMenu.jTextField2.getText();</span>
+
+<span class="fc bfc" id="L83" title="All 2 branches covered.">		if (recipeName.isEmpty()) {</span>
+<span class="fc" id="L84">			JOptionPane.showMessageDialog(createMealMenu, &quot;Lütfen tarif ismini giriniz.&quot;, &quot;Eksik Bilgi&quot;,</span>
+					JOptionPane.WARNING_MESSAGE);
+<span class="fc" id="L86">			return;</span>
+		}
+
+<span class="fc" id="L89">		String meal_name = createMealMenu.jTextField2.getText();</span>
+<span class="fc" id="L90">		String meal_cost = createMealMenu.jTextField4.getText();</span>
+<span class="fc" id="L91">		DefaultTableModel model = (DefaultTableModel) createMealMenu.jTable2.getModel();</span>
+<span class="fc" id="L92">		StringBuilder recipes = new StringBuilder();</span>
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">		for (int i = 0; i &lt; model.getRowCount(); i++) {</span>
+<span class="fc" id="L95">			String recipe_name = (String) model.getValueAt(i, 1);</span>
+<span class="pc bpc" id="L96" title="1 of 4 branches missed.">			if (recipe_name != null &amp;&amp; !recipe_name.trim().isEmpty()) {</span>
+<span class="fc" id="L97">				recipes.append(recipe_name).append(&quot;, &quot;);</span>
+			}
+		}
+
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">		if (recipes.length() &gt; 0) {</span>
+<span class="fc" id="L102">			recipes.setLength(recipes.length() - 2);</span>
+		}
+
+<span class="fc" id="L105">		int meal_id = findUnusedIdMeal();</span>
+<span class="fc" id="L106">		String insertMealQuery = &quot;INSERT INTO Meals (meal_id, meal_name, meal_cost, recipe_name) VALUES (?, ?, ?, ?)&quot;;</span>
+<span class="fc" id="L107">		try (PreparedStatement statement = connection.prepareStatement(insertMealQuery)) {</span>
+<span class="fc" id="L108">			statement.setInt(1, meal_id);</span>
+<span class="fc" id="L109">			statement.setString(2, meal_name);</span>
+<span class="fc" id="L110">			statement.setString(3, meal_cost);</span>
+<span class="fc" id="L111">			statement.setString(4, recipes.toString());</span>
+<span class="fc" id="L112">			statement.executeUpdate();</span>
+<span class="fc" id="L113">			System.out.println(&quot;Meal successfully added to the database with ID: &quot; + meal_id);</span>
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">			for (int i = 0; i &lt; model.getRowCount(); i++) {</span>
+<span class="fc" id="L116">				String recipe_name = (String) model.getValueAt(i, 1);</span>
+<span class="pc bpc" id="L117" title="1 of 4 branches missed.">				if (recipe_name != null &amp;&amp; !recipe_name.trim().isEmpty()) {</span>
+<span class="fc" id="L118">					int recipe_id = Integer.parseInt(model.getValueAt(i, 0).toString());</span>
+<span class="fc" id="L119">					String insertMealRecipesQuery = &quot;INSERT INTO MealRecipes (meal_id, recipe_name) VALUES (?, ?)&quot;;</span>
+<span class="fc" id="L120">					try (PreparedStatement mealRecipesStatement = connection.prepareStatement(insertMealRecipesQuery)) {</span>
+<span class="fc" id="L121">						mealRecipesStatement.setInt(1, meal_id);</span>
+<span class="fc" id="L122">						mealRecipesStatement.setString(2, recipe_name);</span>
+<span class="fc" id="L123">						mealRecipesStatement.executeUpdate();</span>
+					}
+				}
+			}
+<span class="nc" id="L127">		} catch (Exception e) {</span>
+<span class="nc" id="L128">			System.err.println(&quot;Error adding meal to the database: &quot; + e.getMessage());</span>
+<span class="fc" id="L129">		}</span>
+<span class="fc" id="L130">	}</span>
+
+	/**
+	 * @brief Finds an unused ID for a new meal.
+	 * @return The unused meal ID.
+	 */
+	public int findUnusedIdMeal() {
+<span class="fc" id="L137">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L138">		int newId = 1;</span>
+		try {
+<span class="fc" id="L140">			String query = &quot;SELECT meal_id FROM Meals ORDER BY meal_id&quot;;</span>
+<span class="fc" id="L141">			try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">				while (rs.next()) {</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">					if (rs.getInt(&quot;meal_id&quot;) != newId) {</span>
+<span class="fc" id="L144">						break;</span>
+					}
+<span class="nc" id="L146">					newId++;</span>
+				}
+			}
+<span class="nc" id="L149">		} catch (SQLException ex) {</span>
+<span class="nc" id="L150">			ex.printStackTrace();</span>
+<span class="fc" id="L151">		}</span>
+<span class="fc" id="L152">		return newId;</span>
+	}
+
+	/**
+	 * @brief Fetches recipe data from the database and populates the menu's recipe
+	 *        table.
+	 */
+	public void FetchDataRecipes() {
+<span class="fc" id="L160">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L161">		String query = &quot;SELECT recipe_id, recipe_name, recipe_cost FROM Recipes&quot;;</span>
+<span class="fc" id="L162">		DefaultTableModel model = (DefaultTableModel) createMealMenu.jTable1.getModel();</span>
+<span class="fc" id="L163">		model.setRowCount(0);</span>
+
+<span class="fc" id="L165">		try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">			while (rs.next()) {</span>
+<span class="fc" id="L167">				int id = rs.getInt(&quot;recipe_id&quot;);</span>
+<span class="fc" id="L168">				String name = rs.getString(&quot;recipe_name&quot;);</span>
+<span class="fc" id="L169">				String price = rs.getString(&quot;recipe_cost&quot;);</span>
+<span class="fc" id="L170">				model.addRow(new Object[] { id, name, price });</span>
+<span class="fc" id="L171">			}</span>
+<span class="nc" id="L172">		} catch (SQLException ex) {</span>
+<span class="nc" id="L173">			ex.printStackTrace();</span>
+<span class="fc" id="L174">		}</span>
+<span class="fc" id="L175">	}</span>
+
+	/**
+	 * @brief Adds the selected recipe from the recipe table to the meal's recipe
+	 *        table.
+	 */
+	public void addRecipeToTable() {
+<span class="fc" id="L182">		int selectedRow = createMealMenu.jTable1.getSelectedRow();</span>
+		int selectedRecipeId;
+
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">		if (selectedRow != -1) {</span>
+<span class="fc" id="L186">			selectedRecipeId = Integer.parseInt(createMealMenu.jTable1.getValueAt(selectedRow, 0).toString());</span>
+<span class="fc" id="L187">			String recipeName = createMealMenu.jTable1.getValueAt(selectedRow, 1).toString();</span>
+
+<span class="fc" id="L189">			DefaultTableModel model = (DefaultTableModel) createMealMenu.jTable2.getModel();</span>
+<span class="fc" id="L190">			model.insertRow(0, new Object[] { selectedRecipeId, recipeName });</span>
+<span class="fc" id="L191">		} else {</span>
+<span class="nc" id="L192">			JOptionPane.showMessageDialog(createMealMenu, &quot;Please select a recipe.&quot;, &quot;No recipe Selected&quot;,</span>
+					JOptionPane.WARNING_MESSAGE);
+		}
+<span class="fc" id="L195">	}</span>
+
+	/**
+	 * @brief Calculates the cost of the selected recipes and updates the cost
+	 *        table.
+	 */
+	public void calculateCost() {
+<span class="fc" id="L202">		double totalCost = 0;</span>
+<span class="fc" id="L203">		double quantity = Double.parseDouble(createMealMenu.jTextField1.getText());</span>
+<span class="fc" id="L204">		int[] selectedRows = createMealMenu.jTable2.getSelectedRows();</span>
+<span class="fc" id="L205">		DefaultTableModel model = (DefaultTableModel) createMealMenu.jTable3.getModel();</span>
+<span class="fc" id="L206">		model.setRowCount(0); // Clear the table before adding new values</span>
+
+<span class="fc bfc" id="L208" title="All 2 branches covered.">		for (int row : selectedRows) {</span>
+<span class="fc" id="L209">			int recipeId = Integer.parseInt(createMealMenu.jTable2.getValueAt(row, 0).toString());</span>
+<span class="fc" id="L210">			String price = &quot;&quot;;</span>
+
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">			for (int i = 0; i &lt; createMealMenu.jTable1.getRowCount(); i++) {</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">				if (Integer.parseInt(createMealMenu.jTable1.getValueAt(i, 0).toString()) == recipeId) {</span>
+<span class="fc" id="L214">					price = createMealMenu.jTable1.getValueAt(i, 2).toString();</span>
+<span class="fc" id="L215">					break;</span>
+				}
+			}
+
+<span class="fc" id="L219">			double cost = Double.parseDouble(price) * quantity;</span>
+<span class="fc" id="L220">			totalCost += cost;</span>
+
+			// Add a new row to jTable3 with the calculated cost
+<span class="fc" id="L223">			model.addRow(new Object[] { cost });</span>
+		}
+<span class="fc" id="L225">	}</span>
+
+	/**
+	 * @brief Calculates the total cost of the meal based on the individual costs in
+	 *        the cost table.
+	 */
+	public void calculateTotalCost() {
+<span class="fc" id="L232">		double totalCost = 0;</span>
+
+<span class="fc bfc" id="L234" title="All 2 branches covered.">		for (int i = 0; i &lt; createMealMenu.jTable3.getRowCount(); i++) {</span>
+<span class="fc" id="L235">			Object value = createMealMenu.jTable3.getValueAt(i, 0);</span>
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">			if (value != null) {</span>
+<span class="fc" id="L237">				totalCost += Double.parseDouble(value.toString());</span>
+			}
+		}
+
+<span class="fc" id="L241">		createMealMenu.jTextField4.setText(Double.toString(totalCost));</span>
+<span class="fc" id="L242">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

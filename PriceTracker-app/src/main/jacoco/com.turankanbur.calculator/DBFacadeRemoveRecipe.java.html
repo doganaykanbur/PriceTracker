@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DBFacadeRemoveRecipe.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PriceTracker-app</a> &gt; <a href="index.source.html" class="el_package">com.kanbur.Price</a> &gt; <span class="el_source">DBFacadeRemoveRecipe.java</span></div><h1>DBFacadeRemoveRecipe.java</h1><pre class="source lang-java linenums">/**
+ * The package com.kanbur.Price contains classes related to the calculator application.
+ */
+package com.kanbur.Price;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
+/**
+ * @brief Provides methods to remove recipes from the database.
+ */
+public class DBFacadeRemoveRecipe {
+
+	/**
+	 * The singleton instance of DatabaseConnectionMenu.
+	 */
+	private DBConnection databaseConnection;
+	
+	/**
+	 * Instance of the RemoveRecipeMenu class.
+	 */
+	RemoveRecipeMenu removeRecipeMenu;
+
+	/**
+	 * @brief Constructs a DatabaseFacadeForRemoveRecipeMenu object.
+	 * @param menu The RemoveRecipeMenu object associated with this facade.
+	 */
+<span class="fc" id="L34">	public DBFacadeRemoveRecipe(RemoveRecipeMenu menu) {</span>
+<span class="fc" id="L35">		databaseConnection = DBConnection.getInstance();</span>
+<span class="fc" id="L36">		this.removeRecipeMenu = menu;</span>
+<span class="fc" id="L37">	}</span>
+
+	/**
+	 * @brief Removes the selected recipe and its associated ingredients from the
+	 *        database.
+	 * @param row The index of the selected row in the JTable.
+	 */
+	public void removeAdjacentRowFromDatabase(int row) {
+<span class="fc" id="L45">		try (Connection conn = DriverManager.getConnection(&quot;jdbc:sqlite:Database.db&quot;)) {</span>
+
+<span class="fc" id="L47">			int recipe_id = (int) removeRecipeMenu.jTable1.getValueAt(row, 0);</span>
+
+<span class="fc" id="L49">			String deleteQuery = &quot;DELETE FROM Recipes WHERE recipe_id = ?&quot;;</span>
+<span class="fc" id="L50">			String deleteQuery2 = &quot;DELETE FROM RecipeIngredients WHERE recipe_id = ?&quot;;</span>
+
+<span class="fc" id="L52">			try (PreparedStatement pstmt = conn.prepareStatement(deleteQuery)) {</span>
+<span class="fc" id="L53">				pstmt.setInt(1, recipe_id);</span>
+<span class="fc" id="L54">				pstmt.executeUpdate();</span>
+			}
+
+<span class="fc" id="L57">			try (PreparedStatement pstmt2 = conn.prepareStatement(deleteQuery2)) {</span>
+<span class="fc" id="L58">				pstmt2.setInt(1, recipe_id);</span>
+<span class="fc" id="L59">				pstmt2.executeUpdate();</span>
+			}
+
+<span class="fc" id="L62">			JOptionPane.showMessageDialog(removeRecipeMenu, &quot;Recipe removed successfully!&quot;);</span>
+<span class="fc" id="L63">			FetchData();</span>
+<span class="nc" id="L64">		} catch (SQLException ex) {</span>
+<span class="nc" id="L65">			ex.printStackTrace();</span>
+<span class="nc" id="L66">			JOptionPane.showMessageDialog(removeRecipeMenu,</span>
+					&quot;An error occurred while removing adjacent rows from the database.&quot;, &quot;Error&quot;,
+					JOptionPane.ERROR_MESSAGE);
+<span class="fc" id="L69">		}</span>
+<span class="fc" id="L70">	}</span>
+
+	/**
+	 * @brief Removes the selected row from the database and updates the table.
+	 */
+	public void removeAdjacentRows() {
+
+<span class="fc" id="L77">		int selectedRow = removeRecipeMenu.jTable1.getSelectedRow();</span>
+
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">		if (selectedRow == -1) {</span>
+<span class="nc" id="L80">			JOptionPane.showMessageDialog(removeRecipeMenu, &quot;You must select a row to remove adjacent rows.&quot;, &quot;Error&quot;,</span>
+					JOptionPane.ERROR_MESSAGE);
+<span class="nc" id="L82">			return;</span>
+		}
+
+<span class="fc" id="L85">		removeAdjacentRowFromDatabase(selectedRow);</span>
+<span class="fc" id="L86">	}</span>
+
+	/**
+	 * @brief Fetches recipe data from the database and populates the JTable in the
+	 *        associated menu.
+	 */
+	public void FetchData() {
+<span class="fc" id="L93">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L94">		DefaultTableModel recipeModel = (DefaultTableModel) removeRecipeMenu.jTable1.getModel();</span>
+<span class="fc" id="L95">		recipeModel.setRowCount(0);</span>
+
+<span class="fc" id="L97">		try (Statement statement = connection.createStatement()) {</span>
+
+<span class="fc" id="L99">			String recipeQuery = &quot;SELECT Recipes.recipe_id, Recipes.recipe_name, Recipes.recipe_cost, GROUP_CONCAT(RecipeIngredients.ingredient_name, ', ') AS ingredient_names &quot;</span>
+					+ &quot;FROM Recipes INNER JOIN RecipeIngredients &quot;
+					+ &quot;ON Recipes.recipe_id = RecipeIngredients.recipe_id &quot; + &quot;GROUP BY Recipes.recipe_id&quot;;
+
+<span class="fc" id="L103">			ResultSet rs = statement.executeQuery(recipeQuery);</span>
+
+<span class="fc bfc" id="L105" title="All 2 branches covered.">			while (rs.next()) {</span>
+<span class="fc" id="L106">				int recipe_id = rs.getInt(&quot;recipe_id&quot;);</span>
+<span class="fc" id="L107">				String recipe_name = rs.getString(&quot;recipe_name&quot;);</span>
+<span class="fc" id="L108">				String recipe_cost = rs.getString(&quot;recipe_cost&quot;);</span>
+<span class="fc" id="L109">				String ingredient_names = rs.getString(&quot;ingredient_names&quot;);</span>
+<span class="fc" id="L110">				recipeModel.addRow(new Object[] { recipe_id, recipe_name, ingredient_names, recipe_cost });</span>
+<span class="fc" id="L111">			}</span>
+<span class="nc" id="L112">		} catch (SQLException ex) {</span>
+<span class="nc" id="L113">			ex.printStackTrace();</span>
+<span class="fc" id="L114">		}</span>
+<span class="fc" id="L115">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

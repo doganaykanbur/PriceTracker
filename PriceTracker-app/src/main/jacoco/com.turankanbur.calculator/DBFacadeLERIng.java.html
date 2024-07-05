@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DBFacadeLERIng.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PriceTracker-app</a> &gt; <a href="index.source.html" class="el_package">com.kanbur.Price</a> &gt; <span class="el_source">DBFacadeLERIng.java</span></div><h1>DBFacadeLERIng.java</h1><pre class="source lang-java linenums">/**
+ * The package com.kanbur.Price contains classes related to the calculator application.
+ */
+package com.kanbur.Price;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
+
+/**
+ * @brief Provides methods to interact with the database for listing, editing,
+ *        and removing ingredients.
+ */
+public class DBFacadeLERIng {
+
+	/**
+	 * The singleton instance of DatabaseConnectionMenu.
+	 */
+	private DBConnection databaseConnection;
+	
+	/**
+	 * Instance of the ListEditAndRemoveIngredientMenu class.
+	 */
+	LERIngMenu listEditAndRemoveIngredientMenu;
+
+	/**
+	 * @brief Constructs a DatabaseFacadeForListEditAndRemoveIngredientMenu object.
+	 * @param menu The ListEditAndRemoveIngredientMenu object associated with this
+	 *             facade.
+	 */
+<span class="fc" id="L36">	public DBFacadeLERIng(LERIngMenu menu) {</span>
+<span class="fc" id="L37">		databaseConnection = DBConnection.getInstance();</span>
+<span class="fc" id="L38">		this.listEditAndRemoveIngredientMenu = menu;</span>
+<span class="fc" id="L39">	}</span>
+
+	/**
+	 * @brief Fetches data from the Ingredients table and populates the JTable in
+	 *        the associated menu.
+	 */
+	public void FetchData() {
+<span class="fc" id="L46">		Connection connection = databaseConnection.getConnection();</span>
+<span class="fc" id="L47">		String query = &quot;SELECT ingredient_id, ingredient_name, ingredient_price FROM Ingredients&quot;;</span>
+<span class="fc" id="L48">		DefaultTableModel model = (DefaultTableModel) listEditAndRemoveIngredientMenu.jTable2.getModel();</span>
+<span class="fc" id="L49">		model.setRowCount(0);</span>
+
+<span class="fc" id="L51">		try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery(query)) {</span>
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">			while (rs.next()) {</span>
+<span class="fc" id="L54">				int id = rs.getInt(&quot;ingredient_id&quot;);</span>
+<span class="fc" id="L55">				String name = rs.getString(&quot;ingredient_name&quot;);</span>
+<span class="fc" id="L56">				String price = rs.getString(&quot;ingredient_price&quot;);</span>
+<span class="fc" id="L57">				model.addRow(new Object[] { id, name, price });</span>
+<span class="fc" id="L58">			}</span>
+<span class="nc" id="L59">		} catch (SQLException ex) {</span>
+<span class="nc" id="L60">			ex.printStackTrace();</span>
+<span class="fc" id="L61">		}</span>
+<span class="fc" id="L62">	}</span>
+
+	/**
+	 * @brief Updates the database with the new value after editing a cell in the
+	 *        JTable.
+	 * @param row      The row index of the edited cell.
+	 * @param column   The column index of the edited cell.
+	 * @param newValue The new value entered by the user.
+	 */
+	public void saveToDatabase(int row, int column, String newValue) {
+<span class="fc" id="L72">		try (Connection conn = DriverManager.getConnection(&quot;jdbc:sqlite:Database.db&quot;)) {</span>
+<span class="fc" id="L73">			String columnName = listEditAndRemoveIngredientMenu.jTable2.getColumnName(column);</span>
+
+<span class="fc" id="L75">			String updateQuery = &quot;UPDATE Ingredients SET &quot;;</span>
+
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">			if (columnName.equals(&quot;Name&quot;)) {</span>
+<span class="fc" id="L78">				updateQuery += &quot;ingredient_name = ?&quot;;</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">			} else if (columnName.equals(&quot;Price&quot;)) {</span>
+<span class="nc" id="L80">				updateQuery += &quot;ingredient_price = ?&quot;;</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">			} else if (columnName.equals(&quot;Id&quot;)) {</span>
+<span class="nc" id="L82">				updateQuery += &quot;ingredient_id = ?&quot;;</span>
+			} else {
+<span class="nc" id="L84">				JOptionPane.showMessageDialog(listEditAndRemoveIngredientMenu, &quot;Invalid column name.&quot;, &quot;Error&quot;,</span>
+						JOptionPane.ERROR_MESSAGE);
+<span class="nc" id="L86">				return;</span>
+			}
+
+<span class="fc" id="L89">			String targetValue = listEditAndRemoveIngredientMenu.jTable2.getValueAt(row, 0).toString();</span>
+
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">			if (columnName.equals(&quot;Id&quot;)) {</span>
+<span class="nc" id="L92">				targetValue = listEditAndRemoveIngredientMenu.jTable2.getValueAt(row, column).toString();</span>
+			}
+
+<span class="fc" id="L95">			updateQuery += &quot; WHERE ingredient_id = ?&quot;;</span>
+
+<span class="fc" id="L97">			try (PreparedStatement pstmt = conn.prepareStatement(updateQuery)) {</span>
+<span class="fc" id="L98">				pstmt.setString(1, newValue);</span>
+<span class="fc" id="L99">				pstmt.setString(2, targetValue);</span>
+<span class="fc" id="L100">				pstmt.executeUpdate();</span>
+			}
+
+<span class="fc" id="L103">			JOptionPane.showMessageDialog(listEditAndRemoveIngredientMenu, &quot;Value updated successfully!&quot;);</span>
+<span class="fc" id="L104">			FetchData();</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">		} catch (SQLException ex) {</span>
+<span class="nc" id="L106">			ex.printStackTrace();</span>
+<span class="nc" id="L107">			JOptionPane.showMessageDialog(listEditAndRemoveIngredientMenu,</span>
+					&quot;An error occurred while updating the database.&quot;, &quot;Error&quot;, JOptionPane.ERROR_MESSAGE);
+<span class="fc" id="L109">		}</span>
+<span class="fc" id="L110">	}</span>
+
+	/**
+	 * @brief Initiates the process of editing a cell in the JTable.
+	 */
+	public void EditData() {
+<span class="fc" id="L116">		int selectedRow = listEditAndRemoveIngredientMenu.jTable2.getSelectedRow();</span>
+<span class="fc" id="L117">		int selectedColumn = listEditAndRemoveIngredientMenu.jTable2.getSelectedColumn();</span>
+
+<span class="fc bfc" id="L119" title="All 2 branches covered.">		if (selectedRow == -1) {</span>
+<span class="fc" id="L120">			JOptionPane.showMessageDialog(listEditAndRemoveIngredientMenu, &quot;You must select a row to edit.&quot;, &quot;Error&quot;,</span>
+					JOptionPane.ERROR_MESSAGE);
+<span class="fc" id="L122">			return;</span>
+		}
+
+<span class="fc" id="L125">		Object selectedData = listEditAndRemoveIngredientMenu.jTable2.getValueAt(selectedRow, selectedColumn);</span>
+
+<span class="fc" id="L127">		String newData = JOptionPane.showInputDialog(listEditAndRemoveIngredientMenu, &quot;Enter new value:&quot;,</span>
+<span class="fc" id="L128">				selectedData.toString());</span>
+
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">		if (newData == null) {</span>
+<span class="nc" id="L131">			return;</span>
+		}
+
+<span class="fc" id="L134">		saveToDatabase(selectedRow, selectedColumn, newData);</span>
+<span class="fc" id="L135">	}</span>
+
+	/**
+	 * @brief Removes a row and its adjacent rows from the database.
+	 * @param row The index of the row to be removed.
+	 */
+	public void removeAdjacentRowFromDatabase(int row) {
+<span class="fc" id="L142">		try (Connection conn = DriverManager.getConnection(&quot;jdbc:sqlite:Database.db&quot;)) {</span>
+
+<span class="fc" id="L144">			int id = (int) listEditAndRemoveIngredientMenu.jTable2.getValueAt(row, 0);</span>
+<span class="fc" id="L145">			String name = (String) listEditAndRemoveIngredientMenu.jTable2.getValueAt(row, 1);</span>
+<span class="fc" id="L146">			String price = (String) listEditAndRemoveIngredientMenu.jTable2.getValueAt(row, 2);</span>
+
+<span class="fc" id="L148">			String deleteQuery = &quot;DELETE FROM Ingredients WHERE ingredient_id = ? OR (ingredient_name = ? AND ingredient_price = ?)&quot;;</span>
+
+<span class="fc" id="L150">			try (PreparedStatement pstmt = conn.prepareStatement(deleteQuery)) {</span>
+<span class="fc" id="L151">				pstmt.setInt(1, id);</span>
+<span class="fc" id="L152">				pstmt.setString(2, name);</span>
+<span class="fc" id="L153">				pstmt.setString(3, price);</span>
+<span class="fc" id="L154">				pstmt.executeUpdate();</span>
+			}
+
+<span class="fc" id="L157">			JOptionPane.showMessageDialog(listEditAndRemoveIngredientMenu, &quot;Ingredient removed successfully!&quot;);</span>
+<span class="fc" id="L158">			FetchData();</span>
+<span class="nc" id="L159">		} catch (SQLException ex) {</span>
+<span class="nc" id="L160">			ex.printStackTrace();</span>
+<span class="nc" id="L161">			JOptionPane.showMessageDialog(listEditAndRemoveIngredientMenu,</span>
+					&quot;An error occurred while removing adjacent rows from the database.&quot;, &quot;Error&quot;,
+					JOptionPane.ERROR_MESSAGE);
+<span class="fc" id="L164">		}</span>
+<span class="fc" id="L165">	}</span>
+
+	/**
+	 * @brief Initiates the process of removing a row and its adjacent rows.
+	 */
+	public void removeAdjacentRows() {
+<span class="fc" id="L171">		int selectedRow = listEditAndRemoveIngredientMenu.jTable2.getSelectedRow();</span>
+
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">		if (selectedRow == -1) {</span>
+<span class="nc" id="L174">			JOptionPane.showMessageDialog(listEditAndRemoveIngredientMenu,</span>
+					&quot;You must select a row to remove adjacent rows.&quot;, &quot;Error&quot;, JOptionPane.ERROR_MESSAGE);
+<span class="nc" id="L176">			return;</span>
+		}
+
+<span class="fc" id="L179">		removeAdjacentRowFromDatabase(selectedRow);</span>
+<span class="fc" id="L180">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DBFacadeLogin.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">PriceTracker-app</a> &gt; <a href="index.source.html" class="el_package">com.kanbur.Price</a> &gt; <span class="el_source">DBFacadeLogin.java</span></div><h1>DBFacadeLogin.java</h1><pre class="source lang-java linenums">/**
+ * The package com.kanbur.Price contains classes related to the calculator application.
+ */
+package com.kanbur.Price;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+/**
+ * Facade class for interacting with the user database during login operations.
+ */
+public class DBFacadeLogin {
+
+	/** The database connection menu instance. */
+	DBConnection databaseConnectionMenu;
+
+	/**
+	 * Constructs a new UserDatabaseFacadeForLogin object.
+	 */
+<span class="fc" id="L22">	public DBFacadeLogin() {</span>
+<span class="fc" id="L23">		databaseConnectionMenu = DBConnection.getInstance();</span>
+<span class="fc" id="L24">	}</span>
+
+	/**
+	 * Validates user credentials by querying the database.
+	 *
+	 * @param username the username to validate
+	 * @param password the password to validate
+	 * @return true if the user with the given credentials exists in the database,
+	 *         false otherwise
+	 */
+	public boolean loginUser(String username, String password) {
+<span class="fc" id="L35">		Connection connection = databaseConnectionMenu.getConnection();</span>
+<span class="fc" id="L36">		String query = &quot;SELECT * FROM Users WHERE username = ? AND password = ?&quot;;</span>
+<span class="fc" id="L37">		try (PreparedStatement pstmt = connection.prepareStatement(query)) {</span>
+<span class="fc" id="L38">			pstmt.setString(1, username);</span>
+<span class="fc" id="L39">			pstmt.setString(2, password);</span>
+<span class="fc" id="L40">			ResultSet resultSet = pstmt.executeQuery();</span>
+<span class="fc" id="L41">			return resultSet.next();</span>
+<span class="nc" id="L42">		} catch (SQLException e) {</span>
+<span class="nc" id="L43">			System.err.println(&quot;An error occurred during login: &quot; + e.getMessage());</span>
+<span class="nc" id="L44">			return false;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
