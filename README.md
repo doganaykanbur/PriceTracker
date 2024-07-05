@@ -28,7 +28,7 @@ Price Tracker is a Java application designed to monitor and track prices of prod
 
 ## Contributing
 
-Contributions are welcome! If you have any suggestions or find issues, please submit them to the [issue tracker](https://github.com/yourusername/PriceTracker/issues).
+Contributions are welcome! If you have any suggestions or find issues, please submit them to the [issue tracker](https://github.com/doganaykanbur/PriceTracker/issues).
 
 ## License
 
