@@ -1,91 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<!-- The Basics -->
-	<groupId>com.kanbur.Price</groupId>
-	<artifactId>PriceTracker-app</artifactId>
-	<version>1.0-SNAPSHOT</version>
-	<packaging>jar</packaging>
-
-	<!-- More Project Information -->
-	<name>PriceTracker-app</name>
-	<url>https://github.com/doganaykanbur/PriceTracker</url>
-	<scm>
-		<url>https://github.com/doganaykanbur/PriceTracker</url>
-	</scm>
-	<inceptionYear>2024</inceptionYear>
-	<developers>
-		<developer>
-			<name>Doganay Kanbur</name>
-			<organization>RTEU</organization>
-			<email>doganay_kanbur21@erdogan.edu.tr</email>
-			<roles>
-				<role>Developer</role>
-				<role>Designer</role>
-			</roles>
-		</developer>
-	</developers>
-	<contributors>
-	
-		<contributor>
-			<name>Doganay Kanbur</name>
-			<organization>RTEU</organization>
-			<email>doganay_kanbur21@erdogan.edu.tr</email>
-			<roles>
-				<role>Developer</role>
-				<role>Designer</role>
-			</roles>
-		</contributor>
-	</contributors>
-	<organization>
-		<name>Recep Tayyip Erdogan University</name>
-		<url>www.erdogan.edu.tr</url>
-	</organization>
-	<!-- Environment Settings -->
-	<issueManagement>
-		<system>Github</system>
-		<url>https://github.com/doganaykanbur/PriceTracker</url>
-	</issueManagement>
-	<ciManagement>
-		<system>Github</system>
-		<notifiers>
-			<notifier>
-				<address>doganay_kanbur21@erdogan.edu.tr</address>
-				<sendOnSuccess>true</sendOnSuccess>
-				<sendOnError>true</sendOnError>
-				<sendOnFailure>true</sendOnFailure>
-				<sendOnWarning>true</sendOnWarning>
-			</notifier>
-		</notifiers>
-		<url>https://github.com/doganaykanbur/PriceTracker</url>
-	</ciManagement>
-	<repositories>
-		<repository>
-		
-		
-			<url>https://github.com/doganaykanbur/PriceTracker</url>
-		</repository>
-	</repositories>
-	<distributionManagement>
-		<site>
-			<name>https://github.com/doganaykanbur/PriceTracker</name>
-		
-		</site>
-	
-		<repository>
-			<id>PriceTracker</id>
-			<name>PriceTracker</name>
-			<url>https://github.com/doganaykanbur/PriceTracker</url>
-		</repository>
-	</distributionManagement>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
-	</properties>
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.kanbur.Price</groupId>
+    <artifactId>PriceTracker-app</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    
+    <name>PriceTracker-app</name>
+    <url>https://github.com/doganaykanbur/PriceTracker</url>
+    <inceptionYear>2024</inceptionYear>
+    
+    <developers>
+        <developer>
+            <name>Doganay Kanbur</name>
+            <organization>RTEU</organization>
+            <email>doganay_kanbur21@erdogan.edu.tr</email>
+            <roles>
+                <role>Developer</role>
+                <role>Designer</role>
+            </roles>
+        </developer>
+    </developers>
+    
+    <contributors>
+        <contributor>
+            <name>Doganay Kanbur</name>
+            <organization>RTEU</organization>
+            <email>doganay_kanbur21@erdogan.edu.tr</email>
+            <roles>
+                <role>Developer</role>
+                <role>Designer</role>
+            </roles>
+        </contributor>
+    </contributors>
+    
+    <organization>
+        <name>Recep Tayyip Erdogan University</name>
+        <url>http://www.erdogan.edu.tr</url>
+    </organization>
+    
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/doganaykanbur/PriceTracker</url>
+    </issueManagement>
+    
+    <ciManagement>
+        <system>Github</system>
+        <notifiers>
+            <notifier>
+                <address>doganay_kanbur21@erdogan.edu.tr</address>
+                <sendOnSuccess>true</sendOnSuccess>
+                <sendOnError>true</sendOnError>
+                <sendOnFailure>true</sendOnFailure>
+                <sendOnWarning>true</sendOnWarning>
+            </notifier>
+        </notifiers>
+        <url>https://github.com/doganaykanbur/PriceTracker</url>
+    </ciManagement>
+    
+    <repositories>
+        <repository>
+            <id>PriceTracker</id>
+            <name>PriceTracker Repository</name>
+            <url>https://github.com/doganaykanbur/PriceTracker</url>
+        </repository>
+    </repositories>
+    
+    <distributionManagement>
+        <repository>
+            <id>PriceTracker-repo</id>
+            <name>PriceTracker Release Repository</name>
+            <url>https://github.com/doganaykanbur/PriceTracker/releases</url>
+        </repository>
+        
+        <site>
+            <id>PriceTracker-site</id>
+            <name>PriceTracker Project Site</name>
+            <url>https://github.com/doganaykanbur/PriceTracker</url>
+        </site>
+    </distributionManagement>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+    
 
 	<dependencies>
             <dependency>
@@ -93,12 +96,7 @@
     <artifactId>sqlite-jdbc</artifactId>
     <version>3.36.0.1</version> <!-- veya en son sürüm -->
 </dependency>
-<dependency>
-    <groupId>com.formdev</groupId>
-    <artifactId>flatlaf</artifactId>
-    <version>3.4.1</version>
-    <scope>runtime</scope>
-</dependency>
+
  <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
