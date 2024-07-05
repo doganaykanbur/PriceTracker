@@ -28,25 +28,27 @@ jobs:
         working-directory: ./PriceTracker-app
 
       - name: Create Release
-        id: create_release
+        id: create_common_release
         uses: actions/create-release@v1
         env:
-          TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TRACKER_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
           body: |
-            Release ${{ github.ref }}
+            Changes in this release:
+            ${{ steps.commit_summary.outputs.summary }}
+            
+           
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset
-        id: upload-release-asset
+      - name: Upload release asset
         uses: actions/upload-release-asset@v1
-        env:
-          TRACKER_TOKEN: ${{ secrets.TRACKER_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_common_release.outputs.upload_url }}
           asset_path: ./PriceTracker-app/target/PriceTracker-app-1.0-SNAPSHOT.jar
           asset_name: PriceTracker-app.jar
           asset_content_type: application/java-archive
+        env:
+          GITHUB_TOKEN: ${{ secrets.TRACKER_TOKEN }}
