@@ -7,11 +7,14 @@ import com.google.gson.reflect.TypeToken;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,17 +24,19 @@ import java.util.Date;
 import java.util.List;
 
 public class PriceMonitorApp {
-
+	JButton testNotificationButton;
     private JFrame frame;
-    JTextField urlField;
-    JTextField nameField;
-    JTable table;
-    DefaultTableModel tableModel;
+    private JTextField urlField;
+    private JTextField nameField;
+    private JTable table;
+    private DefaultTableModel tableModel;
     private List<Product> products;
     private JButton updateButton;
     private JLabel countdownLabel;
     private Timer countdownTimer;
     private int countdown;
+    private SystemTray systemTray;
+    private TrayIcon trayIcon;
 
     public static void main(String[] args) {
         try {
@@ -55,6 +60,7 @@ public class PriceMonitorApp {
         products = loadProducts();
         initialize();
         updatePrices(); // Update prices on startup
+        setupSystemTray(); // Setup system tray and tray icon
     }
 
     public void initialize() {
@@ -147,6 +153,7 @@ public class PriceMonitorApp {
         countdownLabel.setFont(new Font("Arial", Font.BOLD, 18)); // Larger font size
         countdownLabel.setHorizontalAlignment(SwingConstants.CENTER);
         bottomPanel.add(countdownLabel, BorderLayout.CENTER);
+        
     }
 
     void addProduct() {
@@ -197,6 +204,35 @@ public class PriceMonitorApp {
                 tableModel.addRow(new Object[]{product.getName(), "Error fetching price", fetchedAt});
             }
         }
+
+        // Check for price changes and show notification if necessary
+        checkPriceChanges();
+    }
+
+    void checkPriceChanges() {
+        for (Product product : products) {
+            String currentPrice = checkPrice(product.getUrl(), product.getCssClass());
+            if (currentPrice != null) {
+                // Compare current price with stored price
+                // For demonstration purposes, let's assume a simple notification condition (e.g., price decreased)
+                if (product.getLastPrice() != null && !product.getLastPrice().equals(currentPrice)) {
+                    showNotification(product.getName(), currentPrice);
+                    // Update the last fetched price for the product
+                    product.setLastPrice(currentPrice);
+                    saveProducts();
+                }
+            }
+        }
+    }
+
+    void showNotification(String productName, String currentPrice) {
+        if (SystemTray.isSupported()) {
+            try {
+                trayIcon.displayMessage("Price Update", "Price for " + productName + " changed to " + currentPrice, TrayIcon.MessageType.INFO);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     String checkPrice(String url, String cssClass) {
@@ -213,7 +249,7 @@ public class PriceMonitorApp {
         }
     }
 
-     void saveProducts() {
+    void saveProducts() {
         try (FileWriter file = new FileWriter("prices.json")) {
             file.write(new Gson().toJson(products));
         } catch (IOException e) {
@@ -291,11 +327,47 @@ public class PriceMonitorApp {
         }
     }
 
+    private void setupSystemTray() {
+        if (SystemTray.isSupported()) {
+            systemTray = SystemTray.getSystemTray();
+            Image image = Toolkit.getDefaultToolkit().getImage("icon.png"); // Replace with your icon path
+            PopupMenu trayPopupMenu = new PopupMenu();
+
+            // Adding action listener to the tray icon
+            trayIcon = new TrayIcon(image, "Price Monitor");
+            trayIcon.setImageAutoSize(true);
+            trayIcon.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (e.getButton() == MouseEvent.BUTTON1) {
+                        frame.setVisible(true); // Show the main frame on left click
+                    }
+                }
+            });
+
+            // Exit menu item
+            MenuItem exitItem = new MenuItem("Exit");
+            exitItem.addActionListener(e -> {
+                systemTray.remove(trayIcon);
+                System.exit(0);
+            });
+
+            trayPopupMenu.add(exitItem);
+            trayIcon.setPopupMenu(trayPopupMenu);
+
+            try {
+                systemTray.add(trayIcon);
+            } catch (AWTException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     public class Product {
         private String url;
         private String name;
         private String cssClass;
+        private String lastPrice; // To store the last fetched price
 
         public Product(String url, String name, String cssClass) {
             this.url = url;
@@ -313,6 +385,14 @@ public class PriceMonitorApp {
 
         public String getCssClass() {
             return cssClass;
+        }
+
+        public String getLastPrice() {
+            return lastPrice;
+        }
+
+        public void setLastPrice(String lastPrice) {
+            this.lastPrice = lastPrice;
         }
     }
 }
